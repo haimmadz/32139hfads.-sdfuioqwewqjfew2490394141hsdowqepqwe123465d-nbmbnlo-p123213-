@@ -59,16 +59,19 @@ class Zefoy:
         try:
             for x in re.findall(r'<input type="hidden" name="(.*)" value="(.*)">', request.text): self.captcha_[x[0]] = x[1]
 
-            self.captcha_1 = request.text.split('type="text" name="')[1].split('" oninput="this.value=this.value.toLowerCase()"')[0]
-            captcha_url = request.text.split('<img src="')[1].split('" onerror="imgOnError()" class="')[0]
-            request = self.session.get(f"{self.base_url}{captcha_url}",headers=self.headers)
-            open('captcha.png', 'wb').write(request.content)
-            print('Đang giải capcha..')
-            return False
-        except Exception as e:
-            print(f"Không thể giải captcha: {e}")
-            time.sleep(2)
-            self.get_captcha()
+            parts = request.text.split('type="text" name="')
+if len(parts) > 1:
+    self.captcha_1 = parts[1].split('" oninput="this.value=this.value.toLowerCase()"')[0]
+else:
+    print("Không tìm thấy CAPTCHA input trong HTML — captcha_1 lỗi")
+    return False
+
+parts = request.text.split('<img src="')
+if len(parts) > 1:
+    captcha_url = parts[1].split('" onerror="imgOnError()" class="')[0]
+else:
+    print("Không tìm thấy CAPTCHA image URL — captcha_url lỗi")
+    return False
 
     def send_captcha(self, new_session = False):
         if new_session: self.session = requests.Session(); os.remove('session'); time.sleep(2)
